@@ -49,6 +49,15 @@ class DomainAnalyzer:
         )
         risk_score = min(int((total_score / max_possible) * 100), 100) if max_possible > 0 else 0
         risk_level = self._score_to_level(risk_score)
+        #VT override - vendor detections force minimum risk levels
+        vt_result = next((r for r in check_results if r["name"] == "VirusTotal Reputation"), None)
+        if vt_result and vt_result["detections"]:
+            if vt_result["detections"] >= 10 and risk_level not in ("critical",):
+                risk_level = "critical"
+                risk_score = max(risk_score, 70)
+            elif vt_result["detections"] >= 4 and risk_level not in ("critical", "high"):
+                risk_level = "high"
+                risk_score = max(risk_score, 40)
         return {
             "domain": domain,
             "subdomain": subdomain,
