@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-
 """Consonant-to-vowel ratio check for DGA detection."""
-
 class ConsonantVowelCheck:
     """Analyze the consonant-to-vowel ratio in the subdomain.
     Human-chosen domain names follow natural language patterns with
@@ -10,11 +8,11 @@ class ConsonantVowelCheck:
     like 'a3f9b2c1') or lacking the vowel distribution of real words.
     Scoring:
         ratio 1.0-4.0  -> 0 points (normal English-like)
-        ratio 4.0-6.0  -> 10 points (unusual)
-        ratio > 6.0    -> 20 points (likely generated)
-        no vowels       -> 20 points (definitely not a word)
+        ratio 4.0-6.0  -> 5 points (unusual)
+        ratio > 6.0    -> 10 points (likely generated)
+        no vowels       -> 10 points (definitely not a word)
     """
-    max_score = 20
+    max_score = 10
     VOWELS = set("aeiou")
     COMMON_SUBDOMAINS = {"www", "ftp", "smtp", "ns", "ns1", "ns2", "mx", "vpn", "cdn", "ssh"}
     def run(self, domain, subdomain):
@@ -37,7 +35,7 @@ class ConsonantVowelCheck:
         if not alpha_chars:
             return {
                 "name": "Consonant/Vowel Ratio",
-                "score": 15,
+                "score": 8,
                 "flagged": True,
                 "detail": "No alphabetic characters in subdomain - likely encoded data",
                 "ratio": None,
@@ -46,15 +44,15 @@ class ConsonantVowelCheck:
         consonants = len(alpha_chars) - vowels
         if vowels == 0:
             ratio = None
-            score = 20
+            score = 10
             detail = "No vowels found - not a natural word"
         else:
             ratio = round(consonants / vowels, 2)
             if ratio > 6.0:
-                score = 20
+                score = 10
                 detail = f"Very high consonant/vowel ratio ({ratio}) - likely generated"
             elif ratio > 4.0:
-                score = 10
+                score = 5
                 detail = f"High consonant/vowel ratio ({ratio}) - unusual"
             else:
                 score = 0
@@ -62,7 +60,7 @@ class ConsonantVowelCheck:
         return {
             "name": "Consonant/Vowel Ratio",
             "score": score,
-            "flagged": score >= 10,
+            "flagged": score >= 5,
             "detail": detail,
             "ratio": ratio,
         }
