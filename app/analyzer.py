@@ -52,11 +52,11 @@ class DomainAnalyzer:
         }
     def _score_to_level(self, score):
         """Convert a numeric score to a risk level label."""
-        if score >= 75:
+        if score >= 70:
             return "critical"
-        elif score >= 50:
+        elif score >= 40:
             return "high"
-        elif score >= 25:
+        elif score >= 20:
             return "medium"
         else:
             return "low"
