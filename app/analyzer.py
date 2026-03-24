@@ -58,6 +58,9 @@ class DomainAnalyzer:
             elif vt_result["detections"] >= 4 and risk_level not in ("critical", "high"):
                 risk_level = "high"
                 risk_score = max(risk_score, 40)
+            elif vt_result["detections"] >= 1 and risk_level not in ("critical", "high", "medium"):
+                risk_level = "medium"
+                risk_score = max(risk_score, 20)
         return {
             "domain": domain,
             "subdomain": subdomain,
