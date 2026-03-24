@@ -10,11 +10,11 @@ class EntropyCheck:
     'a3f9b2c1d4e5' have high entropy.
     Scoring:
         entropy < 2.5  -> 0 points (normal)
-        entropy 2.5-3.5 -> 5 points (slightly unusual)
-        entropy 3.5-4.0 -> 15 points (suspicious)
-        entropy > 4.0  -> 25 points (likely DGA)
+        entropy 2.5-3.5 -> 10 points (slightly unusual)
+        entropy 3.5-4.0 -> 25 points (suspicious)
+        entropy > 4.0  -> 35 points (likely DGA)
     """
-    max_score = 25
+    max_score = 35
     def run(self, domain, subdomain):
         """Run entropy analysis on the subdomain.
         Args:
@@ -25,13 +25,13 @@ class EntropyCheck:
         """
         entropy = self._shannon_entropy(subdomain)
         if entropy > 4.0:
-            score = 25
+            score = 35
             detail = f"Very high entropy ({entropy:.2f}) - likely algorithmically generated"
         elif entropy > 3.5:
-            score = 15
+            score = 25
             detail = f"High entropy ({entropy:.2f}) - suspicious randomness"
         elif entropy > 2.5:
-            score = 5
+            score = 10
             detail = f"Moderate entropy ({entropy:.2f}) - slightly unusual"
         else:
             score = 0
@@ -39,7 +39,7 @@ class EntropyCheck:
         return {
             "name": "Shannon Entropy",
             "score": score,
-            "flagged": score >= 15,
+            "flagged": score >= 25,
             "detail": detail,
             "entropy": round(entropy, 4),
         }
