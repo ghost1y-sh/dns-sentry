@@ -36,6 +36,12 @@ class DomainAnalyzer:
             result = check.run(domain, subdomain)
             check_results.append(result)
             total_score += result["score"]
+        #Correlation bonus - multiple independent flags are stronger together
+        flagged_count = sum(1 for r in check_results if r["flagged"])
+        if flagged_count >= 3:
+            total_score = int(total_score * 1.5)
+        elif flagged_count >= 2:
+            total_score = int(total_score * 1.3)
         #Normalize to 0-100 scale - exclude VT max if VT was skipped
         max_possible = sum(
             c.max_score for c in self.checks
