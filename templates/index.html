@@ -42,9 +42,11 @@
             border: 1px solid #333;
             color: #c0c0c0;
             font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
+            font-size: 16px;
             padding: 0.75rem;
             resize: vertical;
+            -webkit-appearance: none;
+            border-radius: 0;
         }
 
         textarea:focus {
@@ -57,14 +59,16 @@
         button {
             display: block;
             margin-top: 0.75rem;
-            padding: 0.5rem 1.5rem;
+            padding: 0.75rem 2rem;
             background: #00ff41;
             color: #0a0a0a;
             border: none;
             font-family: 'Courier New', monospace;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 1rem;
             cursor: pointer;
+            -webkit-appearance: none;
+            border-radius: 0;
         }
 
         button:hover { background: #00cc33; }
@@ -76,6 +80,8 @@
             background: #111;
             border-left: 3px solid #00ff41;
             font-size: 0.85rem;
+            overflow-x: auto;
+            white-space: nowrap;
         }
 
         .result {
@@ -83,18 +89,23 @@
             padding: 1rem;
             background: #111;
             border: 1px solid #222;
+            overflow-x: hidden;
         }
 
         .result-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 0.75rem;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
         .domain-name {
             color: #fff;
             font-size: 1rem;
+            word-break: break-all;
+            min-width: 0;
         }
 
         .risk-badge {
@@ -102,6 +113,8 @@
             font-size: 0.75rem;
             font-weight: bold;
             text-transform: uppercase;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .risk-low { background: #1a3a1a; color: #00ff41; }
@@ -123,8 +136,10 @@
 
         .check {
             font-size: 0.8rem;
-            padding: 0.3rem 0;
+            padding: 0.4rem 0;
             border-bottom: 1px solid #1a1a1a;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .check:last-child { border-bottom: none; }
@@ -140,6 +155,47 @@
         @keyframes blink {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 1.25rem;
+            }
+
+            textarea {
+                height: 100px;
+                font-size: 16px;
+            }
+
+            .result {
+                padding: 0.75rem;
+            }
+
+            .result-header {
+                flex-direction: column;
+                gap: 0.4rem;
+            }
+
+            .domain-name {
+                font-size: 0.9rem;
+            }
+
+            .risk-badge {
+                align-self: flex-start;
+            }
+
+            .check {
+                font-size: 0.75rem;
+                line-height: 1.4;
+            }
+
+            .summary {
+                font-size: 0.75rem;
+            }
         }
     </style>
 </head>
