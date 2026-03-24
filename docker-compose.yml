@@ -1,0 +1,39 @@
+services:
+  web:
+    build: .
+    container_name: dns-sentry-web
+    restart: unless-stopped
+    environment:
+      - VT_API_KEY=${VT_API_KEY}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
+    networks:
+      - sentry-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: dns-sentry-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru
+    networks:
+      - sentry-net
+
+  nginx:
+    image: nginx:alpine
+    container_name: dns-sentry-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - web
+    networks:
+      - sentry-net
+
+networks:
+  sentry-net:
+    driver: bridge
