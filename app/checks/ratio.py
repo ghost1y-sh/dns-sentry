@@ -47,7 +47,7 @@ class ConsonantVowelCheck:
         consonants = len(alpha_chars) - vowels
 
         if vowels == 0:
-            ratio = float("inf")
+            ratio = None
             score = 20
             detail = "No vowels found - not a natural word"
         else:
