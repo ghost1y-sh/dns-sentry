@@ -1,0 +1,45 @@
+[
+  {
+    "domain": "mail.google.com",
+    "subdomain": "mail",
+    "risk_score": 0,
+    "risk_level": "low",
+    "checks": [
+      {
+        "name": "Shannon Entropy",
+        "score": 0,
+        "flagged": false,
+        "detail": "Normal entropy (2.00)",
+        "entropy": 2.0
+      },
+      {
+        "name": "Subdomain Length",
+        "score": 0,
+        "flagged": false,
+        "detail": "Normal length (4 chars)",
+        "length": 4
+      },
+      {
+        "name": "Consonant/Vowel Ratio",
+        "score": 0,
+        "flagged": false,
+        "detail": "Normal consonant/vowel ratio (1.0)",
+        "ratio": 1.0
+      },
+      {
+        "name": "Domain Age",
+        "score": 0,
+        "flagged": false,
+        "detail": "Domain registered ~28 year(s) ago - established",
+        "age_days": 10417
+      },
+      {
+        "name": "VirusTotal Reputation",
+        "score": 0,
+        "flagged": false,
+        "detail": "Clean - no vendors flagged this domain",
+        "detections": 0
+      }
+    ]
+  }
+]
