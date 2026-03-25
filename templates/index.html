@@ -189,6 +189,7 @@
 
             .risk-badge {
                 align-self: flex-start;
+                font-size: 0.65rem;
             }
 
             .check {
@@ -265,7 +266,7 @@
                     html += `<div class="result">`;
                     html += `<div class="result-header">`;
                     html += `<span class="domain-name">${result.domain}</span>`;
-                    html += `<span class="risk-badge ${levelClass}">${result.risk_level} (${result.risk_score}/100)</span>`;
+                    html += `<span class="risk-badge ${levelClass}">THREAT LEVEL: ${result.risk_level.toUpperCase()} (${result.risk_score}/100)</span>`;
                     html += `</div>`;
                     html += `<div class="score-bar"><div class="score-fill" style="width:${result.risk_score}%;background:${barColor}"></div></div>`;
 

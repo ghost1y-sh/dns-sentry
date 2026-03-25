@@ -8,13 +8,17 @@ class EntropyCheck:
     generated (DGA) rather than chosen by a human. Legitimate domains
     like 'mail' or 'login' have low entropy. DGA domains like
     'a3f9b2c1d4e5' have high entropy.
+    Also detects hex-encoded subdomains which may have low entropy
+    due to repeated characters but are still machine-generated.
     Scoring:
         entropy < 2.5  -> 0 points (normal)
         entropy 2.5-3.5 -> 10 points (slightly unusual)
         entropy 3.5-4.0 -> 25 points (suspicious)
         entropy > 4.0  -> 35 points (likely DGA)
+        hex string > 6 chars -> minimum 25 points
     """
     max_score = 35
+    HEX_CHARS = set("0123456789abcdef")
     def run(self, domain, subdomain):
         """Run entropy analysis on the subdomain.
         Args:
@@ -24,6 +28,7 @@ class EntropyCheck:
             dict with name, score, flagged, detail, and raw entropy value
         """
         entropy = self._shannon_entropy(subdomain)
+        is_hex = self._is_hex_string(subdomain)
         if entropy > 4.0:
             score = 35
             detail = f"Very high entropy ({entropy:.2f}) - likely algorithmically generated"
@@ -36,6 +41,10 @@ class EntropyCheck:
         else:
             score = 0
             detail = f"Normal entropy ({entropy:.2f})"
+        #Hex override - hex strings are machine-generated regardless of entropy
+        if is_hex and score < 25:
+            score = 25
+            detail = f"Hex-encoded subdomain detected ({entropy:.2f} entropy) - likely machine-generated"
         return {
             "name": "Shannon Entropy",
             "score": score,
@@ -60,3 +69,12 @@ class EntropyCheck:
             if probability > 0:
                 entropy -= probability * math.log2(probability)
         return entropy
+    def _is_hex_string(self, text):
+        """Check if a string looks like hex-encoded data.
+        Returns True if the string is longer than 6 characters and
+        contains only hex characters (0-9, a-f). Short strings like
+        'dead' or 'cafe' are common words and shouldn't trigger.
+        """
+        if len(text) <= 6:
+            return False
+        return all(c in self.HEX_CHARS for c in text.lower())
