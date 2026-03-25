@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """VirusTotal API reputation check for known malicious domains."""
+import time
+import threading
 import requests
 class VirusTotalCheck:
     """Check domain reputation via VirusTotal API v3.
@@ -7,6 +9,8 @@ class VirusTotalCheck:
     A domain flagged by multiple vendors is a strong signal.
     This check is optional - it degrades gracefully without
     an API key.
+    Rate limited to 1 request per 15 seconds to stay within
+    the free tier limit of 4 requests per minute.
     Scoring:
         0 detections    -> 0 points
         1-3 detections  -> 15 points
@@ -16,9 +20,20 @@ class VirusTotalCheck:
     """
     max_score = 40
     VT_URL = "https://www.virustotal.com/api/v3/domains/{domain}"
+    _last_request_time = 0
+    _rate_lock = threading.Lock()
+    RATE_LIMIT_SECONDS = 15
     def __init__(self, api_key=None, cache=None):
         self.api_key = api_key
         self.cache = cache
+    def _rate_limit_wait(self):
+        """Wait if needed to respect VT rate limits."""
+        with self._rate_lock:
+            now = time.time()
+            elapsed = now - VirusTotalCheck._last_request_time
+            if elapsed < self.RATE_LIMIT_SECONDS:
+                time.sleep(self.RATE_LIMIT_SECONDS - elapsed)
+            VirusTotalCheck._last_request_time = time.time()
     def run(self, domain, subdomain):
         """Run VirusTotal reputation check.
         Args:
@@ -45,6 +60,8 @@ class VirusTotalCheck:
             cached = self.cache.get(cache_key)
             if cached is not None:
                 return cached
+        # Rate limit before making the API call
+        self._rate_limit_wait()
         try:
             headers = {"x-apikey": self.api_key}
             response = requests.get(
