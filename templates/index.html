@@ -51,6 +51,7 @@
             padding: 0.75rem;
             resize: vertical;
             appearance: none;
+            -webkit-appearance: none;
             border-radius: 0;
         }
 
@@ -73,11 +74,60 @@
             font-size: 1rem;
             cursor: pointer;
             appearance: none;
+            -webkit-appearance: none;
             border-radius: 0;
         }
 
         button:hover { background: #00cc33; }
         button:disabled { background: #333; color: #666; cursor: wait; }
+
+        .progress-container {
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .progress-text {
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            color: #00ff41;
+        }
+
+        .progress-bar-outer {
+            width: 100%;
+            max-width: 600px;
+            height: 8px;
+            background: #222;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: #00ff41;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-bar-pulse {
+            position: absolute;
+            top: 0;
+            left: -30%;
+            width: 30%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.3), transparent);
+            animation: pulse-slide 1.5s infinite;
+        }
+
+        @keyframes pulse-slide {
+            0% { left: -30%; }
+            100% { left: 100%; }
+        }
+
+        .progress-domain {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 0.3rem;
+        }
 
         .summary {
             margin-bottom: 1.5rem;
@@ -214,6 +264,15 @@
         <button id="analyze" onclick="analyzeDomains()">Analyze</button>
     </div>
 
+    <div class="progress-container" id="progress">
+        <div class="progress-text" id="progress-text">> analyzing 0/0...</div>
+        <div class="progress-bar-outer">
+            <div class="progress-bar-fill" id="progress-fill"></div>
+            <div class="progress-bar-pulse" id="progress-pulse"></div>
+        </div>
+        <div class="progress-domain" id="progress-domain"></div>
+    </div>
+
     <div id="results"></div>
 
     <script>
@@ -221,6 +280,11 @@
             const textarea = document.getElementById('domains');
             const button = document.getElementById('analyze');
             const resultsDiv = document.getElementById('results');
+            const progressDiv = document.getElementById('progress');
+            const progressText = document.getElementById('progress-text');
+            const progressFill = document.getElementById('progress-fill');
+            const progressPulse = document.getElementById('progress-pulse');
+            const progressDomain = document.getElementById('progress-domain');
 
             const domains = textarea.value.trim().split('\n')
                 .map(d => d.trim())
@@ -228,65 +292,109 @@
 
             if (domains.length === 0) return;
 
+            if (domains.length > 50) {
+                resultsDiv.innerHTML = '<p style="color: #ff4444;">> error: maximum 50 domains per scan</p>';
+                return;
+            }
+
             button.disabled = true;
             button.textContent = 'Analyzing...';
-            resultsDiv.innerHTML = '<p class="loading">> running analysis pipeline...</p>';
+            resultsDiv.innerHTML = '';
+            progressDiv.style.display = 'block';
+            progressFill.style.width = '0%';
+            progressPulse.style.display = 'block';
 
-            try {
-                const response = await fetch('/api/analyze', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({domains: domains})
-                });
+            const allResults = [];
+            let completed = 0;
 
-                const data = await response.json();
+            for (const domain of domains) {
+                completed++;
+                const pct = Math.round(((completed - 1) / domains.length) * 100);
+                progressFill.style.width = pct + '%';
+                progressText.textContent = `> analyzing ${completed}/${domains.length}...`;
+                progressDomain.textContent = domain;
 
-                if (data.error) {
-                    resultsDiv.innerHTML = `<p style="color: #ff4444;">> error: ${data.error}</p>`;
-                    return;
-                }
+                try {
+                    const response = await fetch('/api/analyze', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({domains: [domain]})
+                    });
 
-                let html = '';
+                    const data = await response.json();
 
-                html += `<div class="summary">`;
-                html += `> ${data.summary.total} domain(s) scanned | `;
-                html += `<span style="color:#ff0000">${data.summary.critical} critical</span> | `;
-                html += `<span style="color:#ff8800">${data.summary.high} high</span> | `;
-                html += `<span style="color:#ffff00">${data.summary.medium} medium</span> | `;
-                html += `<span style="color:#00ff41">${data.summary.low} low</span>`;
-                html += `</div>`;
-
-                for (const result of data.results) {
-                    const levelClass = `risk-${result.risk_level}`;
-                    const barColor = {
-                        low: '#00ff41', medium: '#ffff00',
-                        high: '#ff8800', critical: '#ff0000'
-                    }[result.risk_level];
-
-                    html += `<div class="result">`;
-                    html += `<div class="result-header">`;
-                    html += `<span class="domain-name">${result.domain}</span>`;
-                    html += `<span class="risk-badge ${levelClass}">THREAT LEVEL: ${result.risk_level.toUpperCase()} (${result.risk_score}/100)</span>`;
-                    html += `</div>`;
-                    html += `<div class="score-bar"><div class="score-fill" style="width:${result.risk_score}%;background:${barColor}"></div></div>`;
-
-                    for (const check of result.checks) {
-                        const cls = check.flagged ? 'check-flag' : 'check-ok';
-                        const icon = check.flagged ? '!!' : 'OK';
-                        html += `<div class="check"><span class="${cls}">[${icon}]</span> ${check.name}: ${check.detail}</div>`;
+                    if (!data.error && data.results) {
+                        allResults.push(...data.results);
+                        renderResults(allResults, resultsDiv);
                     }
+                } catch (err) {
+                    allResults.push({
+                        domain: domain,
+                        subdomain: domain.split('.')[0],
+                        risk_score: 0,
+                        risk_level: 'low',
+                        checks: [{
+                            name: 'Error',
+                            score: 0,
+                            flagged: false,
+                            detail: 'Request failed: ' + err.message
+                        }]
+                    });
+                    renderResults(allResults, resultsDiv);
+                }
+            }
 
-                    html += `</div>`;
+            progressFill.style.width = '100%';
+            progressText.textContent = `> scan complete: ${domains.length} domain(s) analyzed`;
+            progressPulse.style.display = 'none';
+            progressDomain.textContent = '';
+            button.disabled = false;
+            button.textContent = 'Analyze';
+        }
+
+        function renderResults(results, container) {
+            const summary = {
+                total: results.length,
+                critical: results.filter(r => r.risk_level === 'critical').length,
+                high: results.filter(r => r.risk_level === 'high').length,
+                medium: results.filter(r => r.risk_level === 'medium').length,
+                low: results.filter(r => r.risk_level === 'low').length,
+            };
+
+            let html = '';
+
+            html += '<div class="summary">';
+            html += `> ${summary.total} domain(s) scanned | `;
+            html += `<span style="color:#ff0000">${summary.critical} critical</span> | `;
+            html += `<span style="color:#ff8800">${summary.high} high</span> | `;
+            html += `<span style="color:#ffff00">${summary.medium} medium</span> | `;
+            html += `<span style="color:#00ff41">${summary.low} low</span>`;
+            html += '</div>';
+
+            for (const result of results) {
+                const levelClass = 'risk-' + result.risk_level;
+                const barColor = {
+                    low: '#00ff41', medium: '#ffff00',
+                    high: '#ff8800', critical: '#ff0000'
+                }[result.risk_level];
+
+                html += '<div class="result">';
+                html += '<div class="result-header">';
+                html += '<span class="domain-name">' + result.domain + '</span>';
+                html += '<span class="risk-badge ' + levelClass + '">THREAT LEVEL: ' + result.risk_level.toUpperCase() + ' (' + result.risk_score + '/100)</span>';
+                html += '</div>';
+                html += '<div class="score-bar"><div class="score-fill" style="width:' + result.risk_score + '%;background:' + barColor + '"></div></div>';
+
+                for (const check of result.checks) {
+                    const cls = check.flagged ? 'check-flag' : 'check-ok';
+                    const icon = check.flagged ? '!!' : 'OK';
+                    html += '<div class="check"><span class="' + cls + '">[' + icon + ']</span> ' + check.name + ': ' + check.detail + '</div>';
                 }
 
-                resultsDiv.innerHTML = html;
-
-            } catch (err) {
-                resultsDiv.innerHTML = `<p style="color: #ff4444;">> request failed: ${err.message}</p>`;
-            } finally {
-                button.disabled = false;
-                button.textContent = 'Analyze';
+                html += '</div>';
             }
+
+            container.innerHTML = html;
         }
     </script>
 </body>
