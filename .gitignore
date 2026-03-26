@@ -3,3 +3,13 @@ __pycache__/
 *.pyc
 .env
 k8s/secret.yaml
+acm-validation.json
+route53-records.json
+route53-delete.json
+iam_policy.json
+iam_policy_v2.json
+*.zip
+awscliv2.zip
+aws/
+eksctl_Linux_amd64.tar.gz
+results.json
